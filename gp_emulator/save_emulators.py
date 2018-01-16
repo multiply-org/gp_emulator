@@ -13,11 +13,12 @@ import shelve
 import numpy as np
 import h5py
 
-from GaussianProcess import GaussianProcess
-from multivariate_gp import MultivariateEmulator
+from gp_emulator import GaussianProcess
+from .multivariate_gp import MultivariateEmulator
 
 
 class EmulatorStorage ( object ):
+
     def __init__ ( self, fname ):
         self.fname = fname
         
@@ -38,14 +39,14 @@ class EmulatorStorage ( object ):
             # File exists, so open and get a handle to it
             emulators = shelve.open ( self.fname )
         else:
-            print "File doesn't exist, creating it"
-            emulators = shelve.open ( self.fname )
+            print("File doesn't exist, creating it")
+            emulators = shelve.open (self.fname)
 
         if type( tag ) != str:
             tag = repr ( tag )#.strip("()").split(",")
             
 
-        if isinstance ( emulator, MultivariateEmulator ):
+        if isinstance (emulator, MultivariateEmulator):
             emulator_dict = { "X": emulator.X_train, \
                               "y": emulator.y_train, \
                               "basis_functions": \
@@ -55,11 +56,10 @@ class EmulatorStorage ( object ):
                               "hyperparams": \
                                  emulator.hyperparams }
 
-        elif isinstance ( emulator, GaussianProcess ):
+        elif isinstance (emulator, GaussianProcess):
             emulator_dict = { "input": emulator.inputs, \
                               "targets": emulator.targets, \
                               "theta": emulator.theta }
-
         emulators[tag] = emulator_dict
         emulators.close() # Flush!
         
@@ -129,12 +129,11 @@ def convert_npz_to_hdf5 ( npz_file, hdf5_file ):
     try:
         f = h5py.File (hdf5_file, 'r+')
     except IOError:
-        print "The file %s did not exist. Creating it" % hdf5_file
+        print("The file %s did not exist. Creating it")% hdf5_file
         f = h5py.File (hdf5_file, 'w')
-        f
     group = '%s_%03d_%03d_%03d' % ( model, sza, vza, raa )
     if group in f.keys():
-        raise ValueError, "Emulator already exists!"
+        raise ValueError("Emulator already exists!")
     f.create_group ("/%s" % group )
     f.create_dataset ( "/%s/X_train" % group, data=X, compression="gzip" )
     f.create_dataset ( "/%s/y_train" % group, data=y, compression="gzip"  )
@@ -144,5 +143,5 @@ def convert_npz_to_hdf5 ( npz_file, hdf5_file ):
     f.create_dataset ( "/%s/thresh" % group, data=thresh  )
     f.create_dataset ( "/%s/n_pcs" % group, data=n_pcs)
     f.close()
-    print "Emulator safely saved"
+    print("Emulator safely saved")
 

@@ -18,7 +18,7 @@ def k_fold_cross_validation(X, K, randomise = False):
     if randomise: 
         X = list(X)
         random.shuffle(X)
-    for k in xrange(K):
+    for k in range(K):
         training = [x for i, x in enumerate(X) if i % K != k]
         validation = [x for i, x in enumerate(X) if i % K == k]
         yield training, validation
@@ -30,27 +30,26 @@ class GaussianProcess:
     functions ought to be possible and easy to implement.
     
     """
+
     def __init__ ( self, inputs, targets ):
         """The inputs are the input vectors, whereas the targets are the
         emulated model outputs.
 
-	Parameters
-	-----------
-	inputs: array size (Ntrain x Ninputs)
-		An input array of size Ntrain * Ninputs (Ntrain is the 
-		number of training samples, Ninputs is the dimensionality
-                 of the input vector)
+        Parameters
+        -----------
+        inputs: array size (Ntrain x Ninputs)       An input array of size Ntrain * Ninputs (Ntrain is the      number of training samples, Ninputs is the dimensionality
+        of the input vector)
         targets: array size Ntrain
-                The model outputs corresponding to the ``inputs`` training set
+        The model outputs corresponding to the ``inputs`` training set
         """
-		
         self.inputs = inputs
         self.targets = targets
         ( self.n, self.D ) = self.inputs.shape
+
     def _prepare_likelihood ( self ):
         """
         This method precalculates matrices and stuff required for the i
-	log-likelihood maximisation routine, so that they can be
+	    log-likelihood maximisation routine, so that they can be
         reused when calling the ``predict`` method repeatedly.
         """
         
@@ -59,7 +58,7 @@ class GaussianProcess:
         exp_theta = np.exp ( self.theta )
         # Calculation of the covariance matrix Q using theta
         self.Z = np.zeros ( (self.n, self.n) )
-        for d in xrange( self.D ):
+        for d in range( self.D ):
             self.Z = self.Z + exp_theta[d]*\
                             ((np.tile( self.inputs[:, d], (self.n, 1)) - \
                               np.tile( self.inputs[:, d], (self.n, 1)).T))**2
@@ -77,13 +76,13 @@ class GaussianProcess:
     def loglikelihood ( self, theta ):
         """Calculates the loglikelihood for a set of hyperparameters
         ``theta``. The size of ``theta`` is given by the dimensions of
-	the input vector to the model to be emulated.
+	    the input vector to the model to be emulated.
 
-	Parameters
-	----------
-	theta: array
-		Hyperparameters
-	"""
+	    Parameters
+	    ----------
+	        theta: array
+    		Hyperparameters
+	    """
         self._set_params ( theta )
         
         loglikelihood = 0.5*self.logdetQ + \
@@ -94,18 +93,17 @@ class GaussianProcess:
         return loglikelihood
 
     def partial_devs ( self, theta ):
-	"""This function calculates the partial derivatives of the 
-	cost function as a function of the hyperameters, and is only
-	needed during GP training.
-
-	Parameters
-	-----------
-	theta: array
-		Hyperparameter set
-	"""
+        """This function calculates the partial derivatives of the
+        cost function as a function of the hyperameters, and is only
+        needed during GP training.
+        Parameters
+        -----------
+        theta: array
+        	Hyperparameter set
+        """
         partial_d = np.zeros ( self.D + 2 )
         
-        for d in xrange ( self.D ):
+        for d in range ( self.D ):
             V = ((( np.tile ( self.inputs[:, d], ( self.n, 1)) - \
                 np.tile ( self.inputs[:, d], ( self.n, 1)).T))**2).T*self.Z
             
@@ -124,36 +122,35 @@ class GaussianProcess:
         return partial_d
         
     def _set_params ( self, theta ):
-	"""Sets the hyperparameters, and thus also precalculates terms
-	that depend on them. Since hyperparameters are fixed after
-	training, this speeds up some calculations.
+        """Sets the hyperparameters, and thus also precalculates terms
+	    that depend on them. Since hyperparameters are fixed after
+	    training, this speeds up some calculations.
 	
-	Parameters
-	-----------
-	theta: array
-		hyperparameters
-`	"""
+        Parameters
+        -----------
+        theta: array
+        	hyperparameters
+`       """
         
         self.theta = theta
         self._prepare_likelihood ( )
         
     def _learn ( self, theta0, verbose ):
-	"""The training method, called ''learn'' to keep up with the
-	trendy Machine Learning kids!
-	Takes an initial guess of the hyperparameters, and minimises 
-	that through a gradient descent algorithm, using methods
-	``likelihood`` and ``partial_devs`` to select hyperparameters
-	that result in a minimal log-likelihood.
-
-	Parameters
-	-----------
-	theta0: array
-		Hyperparameters
-	verbose: flag
-		Whether to provide lots of information on the 
-		minimiation. Useful to see whether its fitting or
-		not for some hairy problems.
-	"""
+        """The training method, called ''learn'' to keep up with the
+        trendy Machine Learning kids!
+        Takes an initial guess of the hyperparameters, and minimises
+        that through a gradient descent algorithm, using methods
+        ``likelihood`` and ``partial_devs`` to select hyperparameters
+        that result in a minimal log-likelihood.
+        Parameters
+        -----------
+        theta0: array
+        	Hyperparameters
+        verbose: flag
+        	Whether to provide lots of information on the
+        	minimiation. Useful to see whether its fitting or
+        	not for some hairy problems.
+        """
         # minimise self.loglikelihood (with self.partial_devs) to learn
         # theta
         from scipy.optimize import fmin_cg,fmin_l_bfgs_b
@@ -180,21 +177,20 @@ class GaussianProcess:
         return theta_opt
 
     def learn_hyperparameters ( self, n_tries=15, verbose=False ):
-	"""User method to fit the hyperparameters of the model, using
-	random initialisations of parameters. The user should provide
-	a number of tries (e.g. how many random starting points to
-	avoid local minima), and whether it wants lots of information
-	to be reported back.
-	
-	Parameters
-	-----------
-	n_tries: int, optional
-		Number of random starting points
-	verbose: flag, optional
-		How much information to parrot (e.g. convergence of
-		the minimisation algorithm)
+        """User method to fit the hyperparameters of the model, using
+        random initialisations of parameters. The user should provide
+        a number of tries (e.g. how many random starting points to
+        avoid local minima), and whether it wants lots of information
+        to be reported back.
 
-	"""
+        Parameters
+        -----------
+        n_tries: int, optional
+        	Number of random starting points
+        verbose: flag, optional
+        	How much information to parrot (e.g. convergence of
+        	the minimisation algorithm)
+        """
         log_like = []
         params = []
         for theta in 5.*(np.random.rand(n_tries, self.D+2) - 0.5):
@@ -203,31 +199,29 @@ class GaussianProcess:
             params.append ( T[0] )
         log_like = np.array ( log_like )
         idx = np.argsort( log_like )[0]
-        print "After %d, the minimum cost was %e" % ( n_tries, log_like[idx] )
+        print("After %d, the minimum cost was %e") % ( n_tries, log_like[idx] )
         self._set_params ( params[idx])
         return (log_like[idx], params[idx] )
 
     def predict ( self, testing, do_unc=True ):
-	"""Make a prediction for a set of input vectors, as well as 
-	calculate the partial derivatives of the emulated model, 
-	and optionally, the "emulation uncertainty". 
-
-	Parameters
-	-----------
-	testing: array, size Npred * Ninputs
-		The size of this array (and it must always be a 2D array!)
-		is given by the number of input vectors that will be run
-		through the emulator times the input vector size.
-
-	do_unc: flag, optional
-		Calculate the uncertainty (if you don't set this flag, it
-		can shave a few us"""
+        """Make a prediction for a set of input vectors, as well as
+        calculate the partial derivatives of the emulated model,
+        and optionally, the "emulation uncertainty".
+        Parameters
+        -----------
+        testing: array, size Npred * Ninputs
+        	The size of this array (and it must always be a 2D array!)
+        	is given by the number of input vectors that will be run
+        	through the emulator times the input vector size.
+        do_unc: flag, optional
+        	Calculate the uncertainty (if you don't set this flag, it
+        	can shave a few us"""
 
 
         ( nn, D ) = testing.shape
         assert D == self.D
         
-        expX = np.exp ( self.theta )
+        expX = np.exp (self.theta)
         
         a = dist.cdist ( np.sqrt(expX[:(self.D)])*self.inputs, \
             np.sqrt(expX[:(self.D)])*testing, 'sqeuclidean')
@@ -237,11 +231,11 @@ class GaussianProcess:
         
         mu = np.dot( a.T, self.invQt)
         if do_unc:
-	    var = b - np.sum (  a * np.dot(self.invQ,a), axis=0)
+            var = b - np.sum (  a * np.dot(self.invQ,a), axis=0)
         # Derivative and partial derivatives of the function
         deriv = np.zeros ( ( nn, self.D ) )
 
-        for d in xrange ( self.D ):
+        for d in range ( self.D ):
             aa = self.inputs[:,d].flatten()[None,:] - testing[:,d].flatten()[:,None]
             c = a*aa.T
 
@@ -249,7 +243,7 @@ class GaussianProcess:
         if do_unc:
             return mu, var, deriv
         else:
-	    return mu, deriv
+            return mu, deriv
         
     def hessian ( self, testing ):
         '''calculates the hessian of the GP for the testing sample. 
@@ -263,8 +257,8 @@ class GaussianProcess:
         a = expX[self.D]*np.exp(-0.5*aprime)
         dd_addition = np.identity(self.D)*expX[:(self.D)]
         hess = np.zeros ( ( nn, self.D , self.D) )
-        for d in xrange ( self.D ):
-            for d2 in xrange(self.D):
+        for d in range ( self.D ):
+            for d2 in range(self.D):
                 aa = expX[d]*( self.inputs[:,d].flatten()[None,:] - 
                                testing[:,d].flatten()[:,None] )*   \
                      expX[d2]*( self.inputs[:,d2].flatten()[None,:] - 
@@ -301,10 +295,10 @@ if __name__ == "__main__":
         gp = GaussianProcess ( inputs_t, yields_t )
         theta_min= gp.learn_hyperparameters (n_tries=2)
         pred_mu, pred_var, par_dev = gp.predict ( inputs_v )
-        print "TEST"
-        print inputs_v
-        print pred_mu, pred_var, par_dev
-        r = ( yields_v - pred_mu )**2#/pred_var
+        print("TEST")
+        print(inputs_v)
+        print(pred_mu, pred_var, par_dev)
+        r = (yields_v - pred_mu )**2#/pred_var
         rmse.append ( [ np.sqrt(r.mean()), theta_min[1] ])
         
         

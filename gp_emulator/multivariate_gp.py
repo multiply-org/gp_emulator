@@ -33,7 +33,7 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
-from GaussianProcess import GaussianProcess
+from .GaussianProcess import GaussianProcess
 
 
 class MultivariateEmulator ( object ):
@@ -69,20 +69,21 @@ class MultivariateEmulator ( object ):
             The threshold at where to cutoff the percentage of 
             variance explained.
         """
+        basis_functions = None
         if dump is not None:
             if X is None and y is None:
-		if dump.find (".h5") > 0 or dump.find(".hdf5") > 0:
-	            f = h5py.File ( dump, 'r+')
- 	            group = "%s_%03d_%03d_%03d" % ( model, sza, vza, raa )
-        	    X = f[group + '/X_train'][:,:]
+                if dump.find (".h5") > 0 or dump.find(".hdf5") > 0:
+                    f = h5py.File ( dump, 'r+')
+                    group = "%s_%03d_%03d_%03d" % ( model, sza, vza, raa )
+                    X = f[group + '/X_train'][:,:]
                     y = f[group + '/y_train'][:,:]
                     hyperparams = f[group+'/hyperparams'][:,:]
                     thresh = f[group+'/thresh'].value
                     basis_functions = f[group+"/basis_functions"][:,:]
                     n_pcs = f[group+"/n_pcs"].value
                     f.close()
-		elif dump.find(".npz"):
-                    f =  np.load ( dump ) 
+                elif dump.find(".npz"):
+                    f =  np.load ( dump )
                     X = f[ 'X' ]
                     y = f[ 'y' ]
                     hyperparams = f[ 'hyperparams' ]
@@ -90,10 +91,8 @@ class MultivariateEmulator ( object ):
                     if dict(f).has_key ( "basis_functions" ):
                         basis_functions = f[ 'basis_functions' ]
                         n_pcs = f[ 'n_pcs' ]
-                        f.close()
-                    
-                else:    
-                    
+                    f.close()
+                else:
                     f = h5py.File ( dump, 'r+')
                     group = "/%s_%03d_%03d_%03d" % ( model, sza, vza, raa )
                     X = f[group + '/X_train'][:,:]
@@ -104,10 +103,10 @@ class MultivariateEmulator ( object ):
                     n_pcs = f[group+"/n_pcs"].value
                     f.close()
             else:
-                raise ValueError, "You specified both a dump file and X and y"
+                raise ValueError("You specified both a dump file and X and y")
         else:
             if X is None or y is None:
-                raise ValueError, "Need to specify both X and y"
+                raise ValueError("Need to specify both X and y")
             else:
                 assert ( X.shape[0] == y.shape[0] ) 
                 assert X.ndim == 2 
@@ -119,9 +118,9 @@ class MultivariateEmulator ( object ):
         self.y_train = y
         self.thresh = thresh
         if basis_functions is None:
-            print "Decomposing the input dataset into basis functions...",
+            print("Decomposing the input dataset into basis functions...")
             self.calculate_decomposition ( X, thresh )
-            print "Done!\n ====> Using %d basis functions" % self.n_pcs
+            print("Done!\n ====> Using %d basis functions") % self.n_pcs
             basis_functions = self.basis_functions
             n_pcs = self.n_pcs
 
@@ -153,12 +152,11 @@ class MultivariateEmulator ( object ):
             try:
                 f = h5py.File (fname, 'r+')
             except IOError:
-                print "The file %s did not exist. Creating it" % fname
+                print("The file %s did not exist. Creating it") % fname
                 f = h5py.File (fname, 'w')
-                f
             group = '%s_%03d_%03d_%03d' % ( model_name, sza, vza, raa )
             if group in f.keys():
-                raise ValueError, "Emulator already exists!"
+                raise ValueError("Emulator already exists!")
             f.create_group ("/%s" % group )
             f.create_dataset ( "/%s/X_train" % group, data=self.X_train, compression="gzip"  )
             f.create_dataset ( "/%s/y_train" % group, data=self.y_train, compression="gzip"  )
@@ -169,7 +167,7 @@ class MultivariateEmulator ( object ):
             f.create_dataset ( "/%s/thresh" % group, data=self.thresh  )
             f.create_dataset ( "/%s/n_pcs" % group, data=self.n_pcs)
             f.close()
-            print "Emulator safely saved"
+            print("Emulator safely saved")
         else:
             np.savez_compressed ( fname, X=self.X_train, y=self.y_train, \
                 hyperparams=self.hyperparams, thresh=self.thresh, \
@@ -214,13 +212,12 @@ class MultivariateEmulator ( object ):
         self.emulators = []
         train_data = self.compress ( X )
         self.hyperparams = np.zeros ( ( 2 + y.shape[1], self.n_pcs ) )
-        for i in xrange ( self.n_pcs ):
-            
+        for i in range ( self.n_pcs ):
             self.emulators.append ( GaussianProcess ( np.atleast_2d( y), \
                 train_data[i] ) ) 
             if hyperparams is None:
-                print "\tFitting GP for basis function %d" % i
-                self.hyperparams[ :, i] = \
+                print("\tFitting GP for basis function %d") % i
+                self.hyperparams[:, i] = \
                     self.emulators[i].learn_hyperparameters ( n_tries = n_tries )[1]
             else:
                 self.hyperparams[:,i] = hyperparams[:,i]
@@ -236,7 +233,7 @@ class MultivariateEmulator ( object ):
         the_hessian = np.zeros (( len(x), len(x), 
                                  len ( self.basis_functions[0] ) ) )
         x = np.atleast_2d ( x )
-        for i in xrange ( self.n_pcs ):
+        for i in range ( self.n_pcs ):
             #Calculate the Hessian of the weight
             this_hessian = self.emulators[i].hessian ( x )
             # Add this hessian contribution once it's been scaled by the
@@ -269,7 +266,7 @@ class MultivariateEmulator ( object ):
         y = np.atleast_2d ( y ) # Just in case
         if do_deriv:
             deriv = np.zeros ( ( y.shape[1], self.basis_functions.shape[1] ) )
-        for i in xrange ( self.n_pcs ):
+        for i in range ( self.n_pcs ):
             pred_mu, pred_var, grad = self.emulators[i].predict ( y )
             fwd += pred_mu * self.basis_functions[i]
             if do_deriv:
@@ -287,6 +284,7 @@ if __name__ == "__main__":
     angles = f['angles']
     train_params = f['train_params']
     train_brf = f['train_brf']
+
     def unpack(params):
         '''Input a dictionary and output keys and array'''
         inputs = []
@@ -311,14 +309,14 @@ if __name__ == "__main__":
     hypers = mv_em.hyperparams
     mv_em2 = MultivariateEmulator( X=train_brf, y=train_paramsoot, hyperparams=hypers )
     y_arr = y_test*1
-    for i in xrange(8):
+    for i in range(8):
         y_arr[-1] = 0.05 + 0.1*i
         plt.plot ( mv_em.predict ( y_arr )[0], '-r', lw=2 )
         plt.plot ( mv_em2.predict ( y_arr )[0], '-k', lw=1 )
-    mv_em.dump_emulator ( "emulator1.npz" )
+    mv_em.dump_emulator ("emulator1.npz")
     plt.figure()
-    new_em = MultivariateEmulator ( dump="emulator1.npz")
-    for i in xrange(8):
+    new_em = MultivariateEmulator (dump="emulator1.npz")
+    for i in range(8):
         y_arr[-1] = 0.05 + 0.1*i
         plt.plot ( mv_em.predict ( y_arr )[0], '-r', lw=2 )
         plt.plot ( new_em.predict ( y_arr )[0], '-k', lw=1 )
