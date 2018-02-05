@@ -144,42 +144,41 @@ def lhd(dist=None,size=None,dims=1,form='randomized',iterations=100,
              [ 0.96279472  1.79415307  5.52028238]]	
       """
     
-    	# determine the segment size
-    	segmentSize = 1.0/samples
+        # determine the segment size
+        segmentSize = 1.0/samples
     
-    	# get the number of dimensions to sample (number of columns)
-    	numVars = x.shape[1]
+        # get the number of dimensions to sample (number of columns)
+        numVars = x.shape[1]
+
+        # populate each dimension
+        out = np.zeros((samples,numVars))
+        pointValue = np.zeros(samples)
     
-    	# populate each dimension
-    	out = np.zeros((samples,numVars))
-    	pointValue = np.zeros(samples)
+        for n in range(numVars):
+            for i in range(samples):
+                segmentMin = i*segmentSize
+                point = segmentMin + (np.random.random()*segmentSize)
+                pointValue[i] = (point*(x[1,n]-x[0,n])) + x[0,n]
+            out[:,n] = pointValue
     
-    	for n in range(numVars):
-    		for i in range(samples):
-    			segmentMin = i*segmentSize
-    			point = segmentMin + (np.random.random()*segmentSize)
-    			pointValue[i] = (point*(x[1,n]-x[0,n])) + x[0,n]
-    		out[:,n] = pointValue
-    
-    	# now randomly arrange the different segments
-    	return _mix(out)
+        # now randomly arrange the different segments
+        return _mix(out)
     
     def _mix(data,dim='rows'):
-    	"""
-    	Takes a data matrix and mixes up the values along dim (either "rows" or "cols")
-    	"""
-    	tmpdata = copy(data)
-    	if dim is 'cols':
-    		tmpdata = tmpdata.T
+        """
+        Takes a data matrix and mixes up the values along dim (either "rows" or "cols")
+        """
+        tmpdata = copy(data)
+        if dim is 'cols':
+            tmpdata = tmpdata.T
     
-    	for k in range(data.shape[1]):
-    		for i in range(data.shape[0]):
-    			j = np.random.randint(data.shape[0])
-    			temp = copy(tmpdata[i,k])
-    			tmpdata[i,k] = copy(tmpdata[j,k])
-    			tmpdata[j,k] = copy(temp)
-    	
-    	return tmpdata
+        for k in range(data.shape[1]):
+            for i in range(data.shape[0]):
+                j = np.random.randint(data.shape[0])
+                temp = copy(tmpdata[i,k])
+                tmpdata[i,k] = copy(tmpdata[j,k])
+                tmpdata[j,k] = copy(temp)
+        return tmpdata
     
     if form is 'randomized':
         if hasattr(dist,'__getitem__'): # if multiple distributions were input
@@ -209,16 +208,16 @@ def lhd(dist=None,size=None,dims=1,form='randomized',iterations=100,
             return ans
         
         def fill_space(data):
-            best = 1e8
+            d_opt = 1e8
             for it in range(iterations):
                 d = euclid_distance(data)
-                if d<best:
+                if d<d_opt:
                     d_opt = d
                     data_opt = data.copy()
                 
                 data = _mix(data)
             
-            print 'Optimized Distance:',d_opt
+            print('Optimized Distance:', d_opt)
             return data_opt
 
         if hasattr(dist,'__getitem__'): # if multiple distributions were input
@@ -259,9 +258,9 @@ def lhd(dist=None,size=None,dims=1,form='randomized',iterations=100,
         VIF = np.max(np.diag(inv_cor_matrix))
             
         if showcorrelations:
-            print 'Correlation Matrix:\n',cor_matrix
-            print 'Inverted Correlation Matrix:\n',inv_cor_matrix
-            print 'Variance Inflation Factor (VIF):',VIF
+            print('Correlation Matrix:\n',cor_matrix)
+            print('Inverted Correlation Matrix:\n',inv_cor_matrix)
+            print('Variance Inflation Factor (VIF):',VIF)
 #        elif VIF >= 1:
 #            print 'WARNING: Variance Inflation Factor (%5.3f) indicates that there'%(VIF)
 #            print 'may be some undesirably large pairwise correlations present.'
@@ -271,16 +270,16 @@ def lhd(dist=None,size=None,dims=1,form='randomized',iterations=100,
 if __name__=='__main__':
     # test single distribution
     d0 = ss.uniform(loc=-1,scale=2) # uniform distribution,low=-1, width=2
-    print lhd(dist=d0,size=5)
+    print(lhd(dist=d0,size=5))
     
     # test single distribution for multiple variables
     d1 = ss.norm(loc=0,scale=1) # normal distribution, mean=0, stdev=1
-    print lhd(dist=d1,size=7,dims=5)
+    print(lhd(dist=d1,size=7,dims=5))
     
     # test multiple distributions
     d2 = ss.beta(2,5) # beta distribution, alpha=2, beta=5
     d3 = ss.expon(scale=1/1.5) # exponential distribution, lambda=1.5
-    print lhd(dist=(d1,d2,d3),size=6)
+    print(lhd(dist=(d1,d2,d3),size=6))
     
     rand_lhs = lhd(dist=(d0,d1,d2,d3),size=100)
     spac_lhs = lhd(dist=(d0,d1,d2,d3),size=100,form='spacefilling',
@@ -290,8 +289,8 @@ if __name__=='__main__':
         from scatterplot_matrix import scatterplot_matrix as spm
         import matplotlib.pyplot as plt
     except ImportError:
-        print rand_lhs
-        print spac_lhs
+        print(rand_lhs)
+        print(spac_lhs)
     else:
         names = ['U(-1,1)','N(0,1)','Beta(2,5)','Exp(1.5)']
         spm(rand_lhs.T,names=names)
@@ -300,4 +299,3 @@ if __name__=='__main__':
         spm(spac_lhs.T,names=names)
         plt.suptitle('Space-Filling LHS Design')
         plt.show()
-        

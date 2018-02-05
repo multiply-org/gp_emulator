@@ -2,9 +2,9 @@
 import multiprocessing
 import numpy as np
 import scipy.stats as ss
-from lhd import lhd
-from GaussianProcess import GaussianProcess
-from multivariate_gp import MultivariateEmulator
+from .lhd import lhd
+from .GaussianProcess import GaussianProcess
+from .multivariate_gp import MultivariateEmulator
 
 def create_training_set ( parameters, minvals, maxvals, 
                          fix_params=None, n_train=200 ):
@@ -52,8 +52,8 @@ def create_training_set ( parameters, minvals, maxvals,
         for k,v in fix_params.iteritems():
             # Check whether they key makes sense
             if k not in parameters:
-                raise ValueError, "You have specified '%s', which is" %k + \
-                    " not in the parameters list"
+                raise ValueError("You have specified '%s', which is" %k + \
+                    " not in the parameters list")
             
             extras = fix_parameter_training_set(parameters, minvals, maxvals,
                                                 k, v[0], v[1])
@@ -202,18 +202,18 @@ def create_emulator_validation ( f_simulator, parameters, minvals, maxvals,
         val_set = [( (x,)+args) for x in validate]
         validation_gradient = []
         delta = [(maxvals[j] - minvals[j])/10000. 
-                    for j in xrange(len(parameters)) ]
+                    for j in range(len(parameters)) ]
         delta = np.array ( delta )
         for i, pp in enumerate( val_set ):
             xx0 = pp[0]*1.
             grad_val_set = []
             f0 = validation_set[i]
             df = []
-            for j in xrange ( len ( parameters ) ):
+            for j in range ( len ( parameters ) ):
                 xx = xx0*1
                 xx[j] = xx0[j] + delta[j]
                 grad_val_set.append ( xx  )
-                df.append ( f_simulator ( ( (xx,) + args ) ) )
+                df.append (f_simulator ( ( (xx,) + args )))
             df = np.array ( df )
             try:
                 validation_gradient.append (  (df-f0)/delta )
