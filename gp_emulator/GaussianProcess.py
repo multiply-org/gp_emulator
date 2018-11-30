@@ -347,23 +347,12 @@ class GaussianProcess(object):
         a = expX[self.D] * np.exp(-0.5 * aprime)
         dd_addition = np.identity(self.D) * expX[: (self.D)]
         hess = np.zeros((nn, self.D, self.D))
+        aaa = expX[: (self.D)] * (self.inputs.reshape(1, self.n, self.D) - testing.reshape(nn, 1, self.D))
         for d in range(self.D):
-            for d2 in range(self.D):
-                aa = (
-                    expX[d]
-                    * (
-                        self.inputs[:, d].flatten()[None, :]
-                        - testing[:, d].flatten()[:, None]
-                    )
-                    * expX[d2]
-                    * (
-                        self.inputs[:, d2].flatten()[None, :]
-                        - testing[:, d2].flatten()[:, None]
-                    )
-                    - dd_addition[d, d2]
-                )
+            for d2 in range(d, self.D):
+                aa = (aaa[:, :, d] * aaa[:, :, d2]) - dd_addition[d, d2]
                 cc = a * (aa.T)
-                hess[:, d, d2] = np.dot(cc.T, self.invQt)
+                hess[:, d2, d] = hess[:, d, d2] = np.dot(cc.T, self.invQt)
         return hess
 
 
